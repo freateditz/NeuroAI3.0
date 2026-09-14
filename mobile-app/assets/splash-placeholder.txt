@@ -1,0 +1,7 @@
+# Splash Screen Placeholder
+
+This is a placeholder for the splash screen.
+The actual splash should be a 1242x2436 PNG image.
+
+You can generate splash screens using Expo's guidelines:
+https://docs.expo.dev/guides/splash-screens/

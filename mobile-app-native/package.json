@@ -1,0 +1,42 @@
+{
+    "name": "neuro-ai-mobile",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "android": "react-native run-android",
+        "ios": "react-native run-ios",
+        "start": "react-native start",
+        "clean:android": "cd android && ./gradlew clean && cd ..",
+        "clean:ios": "cd ios && xcodebuild clean && cd ..",
+        "pod-install": "cd ios && pod install && cd ..",
+        "reset": "rm -rf node_modules && npm install && npm run pod-install"
+    },
+    "dependencies": {
+        "@react-native-async-storage/async-storage": "^1.21.0",
+        "@react-navigation/bottom-tabs": "^6.5.11",
+        "@react-navigation/native": "^6.1.9",
+        "@react-navigation/native-stack": "^6.9.17",
+        "@runanywhere/core": "^0.17.8",
+        "@runanywhere/llamacpp": "^0.17.7",
+        "@runanywhere/onnx": "^0.17.7",
+        "react": "18.2.0",
+        "react-native": "0.74.1",
+        "react-native-audio-record": "^0.2.2",
+        "react-native-gesture-handler": "^2.14.0",
+        "react-native-safe-area-context": "^4.8.2",
+        "react-native-screens": "^3.29.0",
+        "react-native-svg": "^14.1.0",
+        "react-native-vector-icons": "^10.0.3"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.23.7",
+        "@babel/preset-env": "^7.23.7",
+        "@babel/runtime": "^7.23.7",
+        "@react-native/babel-preset": "0.73.19",
+        "@react-native/metro-config": "0.73.3",
+        "@react-native/typescript-config": "0.73.1",
+        "@types/react": "^18.2.48",
+        "babel-plugin-module-resolver": "^5.0.0",
+        "typescript": "5.3.3"
+    }
+}

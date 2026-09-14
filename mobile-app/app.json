@@ -1,0 +1,31 @@
+{
+    "expo": {
+        "name": "NeuroAI Mobile",
+        "slug": "neuro-ai-mobile",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "userInterfaceStyle": "light",
+        "newArchEnabled": true,
+
+        "assetBundlePatterns": ["**/*"],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.neuroai.mobile"
+        },
+        "android": {
+            "package": "com.neuroai.mobile"
+        },
+        "plugins": [
+            [
+                "expo-build-properties",
+                {
+                    "android": {
+                        "abiFilters": ["arm64-v8a"]
+                    }
+                }
+            ]
+        ],
+        "web": {},
+        "scheme": "neuroai"
+    }
+}

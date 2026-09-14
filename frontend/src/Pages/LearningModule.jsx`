@@ -1,0 +1,239 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { API_URL } from '../url/base';
+import NavButton from '../Components/NavButton';
+import RecordButton from '../Components/RecordButton';
+import Mic from '../Components/Mic';
+import RecordingLoader from '../Components/RecordingLoader';
+
+const LearningModule = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const weekNum = searchParams.get('week');
+  const dayNum = searchParams.get('day');
+  const pathId = searchParams.get('pathId');
+
+  const [task, setTask] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState(0);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+
+  useEffect(() => {
+    fetchTask();
+  }, []);
+
+  const fetchTask = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/learning/path`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to fetch path');
+
+      const path = data.data;
+      const week = path.weeks.find(w => w.weekNumber === parseInt(weekNum));
+      const day = week?.days.find(d => d.dayNumber === parseInt(dayNum));
+
+      if (!day) throw new Error('Task not found');
+      setTask(day);
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+      navigate('/learning-path');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/learning/complete-task`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pathId,
+          weekNumber: parseInt(weekNum),
+          dayNumber: parseInt(dayNum)
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to mark as complete');
+      setIsCompleted(true);
+      setFeedback({ type: 'success', message: 'Congratulations! You completed this module.' });
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      let chunks = [];
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        uploadAndAnalyze(audioBlob);
+      };
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+      return recorder;
+    } catch (err) {
+      alert('Microphone access denied');
+    }
+  };
+
+  const uploadAndAnalyze = async (blob) => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', blob, 'recording.wav');
+      formData.append('targetWord', task.targetPhoneme === 'FLUENCY' ? 'fluency' : task.targetPhoneme);
+
+      const response = await fetch(`${API_URL}/api/test/record`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+
+      if (data.success && data.data.accuracy >= 70) {
+        setFeedback({ type: 'success', message: 'Perfect! You nailed the sound.' });
+        setStep(s => s + 1);
+      } else {
+        setFeedback({ type: 'error', message: 'Not quite. Try again!' });
+      }
+    } catch (err) {
+      setFeedback({ type: 'error', message: 'Error processing speech' });
+    } finally {
+      setLoading(false);
+      setRecording(false);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-screen text-2xl">Loading Module...</div>;
+  if (!task) return <div className="flex justify-center items-center h-screen text-2xl">Task not found</div>;
+
+  const getSteps = () => {
+    const phoneme = task.targetPhoneme;
+    switch (task.activityType) {
+      case 'drill':
+        return [
+          { title: 'Listen & Repeat', description: `Listen to the ${phoneme} sound and repeat it.`, type: 'speech' },
+          { title: 'Phoneme Isolation', description: `Say the sound ${phoneme} clearly.`, type: 'speech' },
+          { title: 'Quick Recognition', description: `Say a word that starts with ${phoneme}.`, type: 'speech' },
+        ];
+      case 'phonics':
+        return [
+          { title: 'Blending Practice', description: `Blend the ${phoneme} sound into a simple word.`, type: 'speech' },
+          { title: 'Syllable Split', description: `Break a word containing ${phoneme} into parts.`, type: 'speech' },
+          { title: 'Rhyme Time', description: `Say a word that rhymes with a ${phoneme} word.`, type: 'speech' },
+        ];
+      default:
+        return [
+          { title: 'Practice', description: task.description, type: 'speech' },
+        ];
+    }
+  };
+
+  const steps = getSteps();
+  const currentStep = steps[step];
+
+  return (
+    <div className="md:px-[9rem] pb-[4rem] font-spacegroteskmedium min-h-screen dark:bg-gray-900 dark:text-white">
+      <div className="mb-10 mt-10 flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold">{task.title}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{task.description}</p>
+        </div>
+        <NavButton
+          text="Exit Module"
+          currLetter=""
+          onClickHandler={() => navigate('/learning-path')}
+        />
+      </div>
+
+      <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 text-center">
+        {isCompleted ? (
+          <div className="py-12">
+            <div className="text-6xl mb-6">🏆</div>
+            <h2 className="text-3xl font-bold mb-4">Module Complete!</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">You've successfully mastered this part of your learning path.</p>
+            <NavButton
+              text="Return to Learning Path"
+              currLetter=""
+              onClickHandler={() => navigate('/learning-path')}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="mb-8">
+              <div className="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2">Step {step + 1} of {steps.length}</div>
+              <h2 className="text-2xl font-bold mb-4">{currentStep.title}</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-8">{currentStep.description}</p>
+            </div>
+
+            <div className="flex justify-center mb-8">
+              {!recording ? <Mic /> : <RecordingLoader />}
+            </div>
+
+            <div className="flex justify-center gap-4 mb-8">
+              {!recording ? (
+                <RecordButton
+                  bgColor="#89D85D"
+                  text="Start Speaking"
+                  onClickHandler={async () => {
+                    const recorder = await startRecording();
+                    setMediaRecorder(recorder);
+                  }}
+                />
+              ) : (
+                <RecordButton
+                  bgColor="#E3E2E7"
+                  textColor="black"
+                  text="Recording..."
+                />
+              )}
+              <RecordButton
+                bgColor="#D86C5D"
+                text="Stop"
+                onClickHandler={() => {
+                  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                  }
+                  setRecording(false);
+                }}
+              />
+            </div>
+
+            {feedback && (
+              <div className={`p-4 rounded-xl mb-8 ${feedback.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                {feedback.message}
+              </div>
+            )}
+
+            {step >= steps.length - 1 && feedback?.type === 'success' && (
+              <button
+                onClick={handleComplete}
+                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-all"
+              >
+                Finish Module & Save Progress
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default LearningModule;

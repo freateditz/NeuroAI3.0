@@ -1,0 +1,31 @@
+node_modules/
+.env
+.DS_Store
+*.log
+dist/
+build/
+coverage/
+.vscode/
+.idea/
+
+# Backend
+backend/server/.env
+backend/server/node_modules/
+
+# Frontend
+frontend/.env
+frontend/node_modules/
+frontend/dist/
+
+# Mobile
+mobile-app/.env
+mobile-app/node_modules/
+mobile-app/.expo/
+
+# Python
+backend/phonemes-backend/__pycache__/
+backend/phonemes-backend/*.pyc
+backend/phonemes-backend/venv/
+backend/streamlit-chatbot/__pycache__/
+backend/streamlit-chatbot/*.pyc
+backend/streamlit-chatbot/venv/

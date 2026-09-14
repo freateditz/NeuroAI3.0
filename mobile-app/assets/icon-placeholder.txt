@@ -1,0 +1,11 @@
+# Icon Placeholder
+
+This is a placeholder for the app icon.
+The actual icon should be a 1024x1024 PNG image.
+
+You can generate app icons using:
+- https://appicon.co/
+- https://makeappicon.com/
+
+Or use the Expo icon guidelines:
+https://docs.expo.dev/guides/app-icons/
