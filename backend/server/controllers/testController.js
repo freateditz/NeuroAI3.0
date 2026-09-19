@@ -318,6 +318,23 @@ export const recordAndAnalyze = async (req, res) => {
     }
 };
 
+// @desc    Proxy TTS request to Python Flask
+// @route   POST /api/test/tts
+// @access  Public
+export const ttsProxy = async (req, res) => {
+    try {
+        const response = await axios.post(`${PHONEME_API_URL}/tts`, req.body, {
+            headers: { 'Content-Type': 'application/json' },
+            responseType: 'arraybuffer'
+        });
+        res.set('Content-Type', 'audio/mpeg');
+        res.send(Buffer.from(response.data));
+    } catch (error) {
+        console.error('[TTS] Error:', error.response?.data || error.message);
+        res.status(500).json({ success: false, message: 'TTS failed', error: error.message });
+    }
+};
+
 // @desc    Get personalized course recommendations based on test results
 // @route   GET /api/test/recommendations
 // @access  Private

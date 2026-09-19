@@ -8,7 +8,8 @@ import {
   getUserStatistics,
   recordAndAnalyze,
   getCourseRecommendations,
-  submitAllTests
+  submitAllTests,
+  ttsProxy
 } from '../controllers/testController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -17,6 +18,7 @@ const router = express.Router();
 // Public routes
 router.get('/word/:letter', getWordForLetter);
 router.post('/record', recordAndAnalyze);
+router.post('/tts', ttsProxy);
 
 // Protected routes (require authentication)
 router.get('/progress/:letter', protect, getUserTestProgress);

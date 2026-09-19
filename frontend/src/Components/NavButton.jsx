@@ -1,15 +1,11 @@
-import Sparkle from "../assets/sparkle.png";
-
-const NavButton = ({ text, onClickHandler, currLetter }) => {
+const NavButton = ({ text, onClickHandler }) => {
   return (
     <button
-      className="w-[9.5rem] h-[4rem] bg-[#0984E3] rounded-lg text-white drop-shadow-[1px_2px_1px_rgba(0,0,0,0.7)] hover:opacity-80 flex justify-center items-center"
+      className="px-5 py-2.5 rounded-xl border border-white/8 text-white/50 font-inter text-sm hover:bg-white/5 hover:text-white/70 transition-all"
       onClick={onClickHandler}
     >
-      <div className="mx-1">{text}</div>
-      <img src={Sparkle} className="h-[1rem]"></img>
+      {text}
     </button>
   );
 };
-
 export default NavButton;

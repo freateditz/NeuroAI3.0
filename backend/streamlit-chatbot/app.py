@@ -22,6 +22,26 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Preformatte
 # Initialize the Groq client
 client = Groq(api_key=GROQ_API_KEY)
 
+SYSTEM_PROMPT = """You are NeuroAI's compassionate speech therapy assistant. You help children with speech and learning difficulties — particularly those with dyslexia, dyspraxia, stuttering, phonological disorders, and other neurodiverse conditions.
+
+Your role:
+- Guide students through their speech learning journey with encouragement and patience
+- Explain speech exercises, phoneme practice, and articulation techniques in simple, age-appropriate language
+- Answer questions about the NeuroAI platform (phoneme tests, learning paths, modules, progress)
+- Provide specific tips for difficult sounds (e.g., /A/, /B/, /C/, /D/, /F/, /L/, /P/, /S/, /T/, /Z/)
+- Celebrate progress and motivate students who feel frustrated
+- Help parents understand their child's speech development and how to support practice at home
+- Suggest daily practice routines and activities
+
+Speech tips you know:
+- /B/ and /P/: press lips together, /B/ is voiced (throat vibrates), /P/ is voiceless
+- /S/ and /Z/: teeth close together, tongue near ridge behind front teeth
+- /L/ and /R/: tongue tip near the ridge behind upper front teeth
+- /F/ and /TH/: bottom lip touches upper front teeth (/F/), tongue between teeth (TH)
+- Warm-up exercises: lip rolls, tongue stretches, humming
+
+Always be warm, encouraging, and specific. Never say a child is doing badly — frame all feedback positively. Keep responses concise (under 200 words unless asked for more detail)."""
+
 # Initialize conversation history and input state in Streamlit session state
 if 'conversation_history' not in st.session_state:
     st.session_state.conversation_history = []
@@ -30,10 +50,12 @@ if 'user_input' not in st.session_state:
 
 def generate_response(user_input):
     """Generate a response using available Groq models and maintain conversation context."""
-    # Add the current user input to the conversation history
     st.session_state.conversation_history.append({"role": "user", "content": user_input})
 
-    candidate_models = ["groq/compound", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
+    # Build messages with system prompt prepended
+    messages_with_system = [{"role": "system", "content": SYSTEM_PROMPT}] + st.session_state.conversation_history
+
+    candidate_models = ["llama3-70b-8192", "mixtral-8x7b-32768", "llama3-8b-8192"]
     response_text = ""
     last_error = None
 
@@ -41,7 +63,7 @@ def generate_response(user_input):
         try:
             completion = client.chat.completions.create(
                 model=model_id,
-                messages=st.session_state.conversation_history,
+                messages=messages_with_system,
                 temperature=0.7,
                 max_tokens=250,
                 top_p=0.9,

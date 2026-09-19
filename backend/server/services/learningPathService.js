@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { LearningPath, LearningPathWeek } from '../models/LearningPath.js';
 import Course from '../models/Course.js';
 import TestResult from '../models/TestResult.js';
@@ -116,7 +117,7 @@ Return ONLY valid JSON matching this exact schema without markdown code blocks o
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'openai/gpt-oss-20b',
+        model: 'llama3-70b-8192',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 500,
@@ -354,6 +355,11 @@ export async function completeTask(pathId, weekNumber, dayNumber, userId) {
   if (allCompleted) {
     week.completed = true;
     week.completedAt = new Date();
+    // Advance currentWeek on the path if this week just completed
+    await LearningPath.findOneAndUpdate(
+      { _id: pathId, user: userId, currentWeek: weekNumber },
+      { $set: { currentWeek: weekNumber + 1 } }
+    );
   }
   await week.save();
   return { week, task };

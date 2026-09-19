@@ -10,6 +10,7 @@ import testRoutes from './routes/test.js';
 import courseRoutes from './routes/course.js';
 import parentRoutes from './routes/parent.js';
 import learningRoutes from './routes/learning.js';
+import chatRoutes from './routes/chat.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -21,7 +22,20 @@ connectDB();
 
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      'http://localhost:3000',
+      process.env.CLIENT_URL
+    ].filter(Boolean);
+    if (allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -42,6 +56,7 @@ app.use('/api/test', testRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/parent', parentRoutes);
 app.use('/api/learning', learningRoutes);
+app.use('/api/chat', chatRoutes);
 
 app.use(errorHandler);
 

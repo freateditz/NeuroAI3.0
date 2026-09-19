@@ -51,7 +51,7 @@ export const getChildren = async (req, res) => {
   try {
     const parentId = req.user._id;
 
-    const links = await ParentStudentLink.find({ parent: parentId, withdrawnAt: null }).populate('student', 'name email picture grade_level');
+    const links = await ParentStudentLink.find({ parent: parentId, withdrawnAt: null }).populate('student', 'name email picture grade_level childAge problemDescription inviteCode');
 
     const children = links.map(link => ({
       linkId: link._id,

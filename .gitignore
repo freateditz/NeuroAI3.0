@@ -29,3 +29,4 @@ backend/phonemes-backend/venv/
 backend/streamlit-chatbot/__pycache__/
 backend/streamlit-chatbot/*.pyc
 backend/streamlit-chatbot/venv/
+deployment.md/

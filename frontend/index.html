@@ -2,13 +2,30 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link
-            rel="icon"
-            type="image/svg+xml"
-            href="./src/assets/recordMic.png"
-        />
+        <link rel="icon" type="image/svg+xml" href="./src/assets/recordMic.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>NeuroAi</title>
+
+        <!-- Apply dark/light class before React renders to prevent FOUC -->
+        <script>
+            (function () {
+                var t = localStorage.getItem('theme');
+                if (t === 'light') {
+                    document.documentElement.classList.add('light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
+        </script>
+
+        <!-- Preconnect so font requests start as early as possible -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <!-- Load fonts directly in <head> instead of via CSS @import to avoid FOUC -->
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Serif+Display:ital@0;1&family=Inter:wght@200;300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
     </head>
     <body>
         <div id="root"></div>

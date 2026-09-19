@@ -15,8 +15,20 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Configure CORS
+_allowed_origins = [
+    r"http://localhost:\d+",
+    r"http://127.0.0.1:\d+",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:3000",
+]
+_frontend_url = os.getenv("FRONTEND_URL")
+if _frontend_url:
+    _allowed_origins.append(_frontend_url)
+
 CORS(app,
-     origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:5174"],
+     origins=_allowed_origins,
      supports_credentials=True,
      methods=["GET", "POST", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization"])
@@ -32,7 +44,6 @@ client = ElevenLabs(api_key=ELEVENLABS_API_KEY) if ELEVENLABS_API_KEY else None
 # Validate API key
 if not ELEVENLABS_API_KEY:
     logger.warning("ELEVENLABS_API_KEY not found in environment variables!")
-COUPLED = ""
 SOUND_REFERENCE = {
     'A': 'E',
     'B': 'V',
@@ -74,6 +85,33 @@ PRONUNCIATION = {
     "sunday": "sʌn.deɪ",
     "tree": "triː",
     "zebra": "ˈziː.brə"
+}
+
+# Short 2-3 word phrases that emphasize each phoneme's sound in natural context
+PHRASES = {
+    'A': 'An apple a day',
+    'B': 'Big blue ball',
+    'C': 'Cool cat sits',
+    'D': 'Dog digs deep',
+    'F': 'Five fish swim',
+    'L': 'Little lion leaps',
+    'P': 'Pink pen please',
+    'S': 'Sun sets slowly',
+    'T': 'Two tall trees',
+    'Z': 'Zebra zips away'
+}
+
+PHRASE_PRONUNCIATION = {
+    'A': 'æn ˈæp.əl ə deɪ',
+    'B': 'bɪɡ bluː bɔːl',
+    'C': 'kuːl kæt sɪts',
+    'D': 'dɒɡ dɪɡz diːp',
+    'F': 'faɪv fɪʃ swɪm',
+    'L': 'ˈlɪt.əl ˈlaɪ.ən liːps',
+    'P': 'pɪŋk pen pliːz',
+    'S': 'sʌn sets ˈsloʊ.li',
+    'T': 'tuː tɔːl triːz',
+    'Z': 'ˈziː.brə zɪps əˈweɪ'
 }
 
 LETTERS = ['A', 'B', 'C', 'D', 'F', 'L', 'P', 'S', 'T', 'Z']
@@ -247,32 +285,94 @@ HALLUCINATED_PHRASES = {
     'bye', 'hello', 'ok', 'okay', 'like', 'yeah', 'yes', 'no', 'so'
 }
 
-def verify_word(target_word, transcribed_text):
+def _normalize_text(text):
+    """Normalize text for comparison: lowercase, remove punctuation, strip."""
+    if has_devanagari(text):
+        text = devanagari_to_latin(text)
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\s+', ' ', text)
+    return text
+
+
+def _score_single_word(target, transcribed):
+    """Score a single target word against transcribed text. Returns (is_correct, accuracy)."""
+    if target == transcribed:
+        return True, 100
+    if target in transcribed.split():
+        return True, 100
+
+    distance = levenshtein_distance(target, transcribed)
+    max_len = max(len(target), len(transcribed))
+    accuracy = max(0, int((1 - distance / max_len) * 100))
+
+    target_phonetic = normalize_phonetics(target)
+    transcribed_phonetic = normalize_phonetics(transcribed)
+    if target_phonetic == transcribed_phonetic:
+        accuracy = max(accuracy, 95)
+
+    known_variants = PHONETIC_VARIANTS.get(target, [])
+    if transcribed in known_variants:
+        accuracy = max(accuracy, 95)
+    for tw in transcribed.split():
+        if tw in known_variants:
+            accuracy = max(accuracy, 90)
+
+    if transcribed and target and transcribed[0] == target[0] and distance <= 2:
+        accuracy = max(accuracy, 85)
+    if len(transcribed) >= 3 and (transcribed in target or target in transcribed):
+        accuracy = max(accuracy, 80)
+
+    return accuracy >= 80, accuracy
+
+
+def _score_phrase(target_phrase, transcribed):
     """
-    Normalizes and compares the transcribed text with the target word.
+    Word-level scoring for multi-word phrases.
+    Matches each significant target word against any transcribed word using Levenshtein.
     Returns (is_correct, accuracy).
     """
-    import re
+    target_words = [w for w in target_phrase.split() if len(w) >= 3]
+    transcribed_words = transcribed.split()
 
+    if not target_words:
+        return _score_single_word(target_phrase, transcribed)
+
+    matched = 0
+    for tw in target_words:
+        best_sim = 0
+        for rw in transcribed_words:
+            dist = levenshtein_distance(tw, rw)
+            max_l = max(len(tw), len(rw))
+            sim = max(0, (1 - dist / max_l)) * 100 if max_l else 0
+            best_sim = max(best_sim, sim)
+        # Check phonetic variants too
+        if tw in PHONETIC_VARIANTS:
+            for variant in PHONETIC_VARIANTS[tw]:
+                if variant in transcribed_words:
+                    best_sim = max(best_sim, 95)
+        if best_sim >= 65:
+            matched += 1
+
+    accuracy = int((matched / len(target_words)) * 100)
+    is_correct = accuracy >= 55
+    return is_correct, accuracy
+
+
+def verify_word(target_word, transcribed_text):
+    """
+    Normalizes and compares the transcribed text with the target word or phrase.
+    Handles both single words and multi-word phrases.
+    Returns (is_correct, accuracy).
+    """
     # Pre-strip bracketed annotation text like [clears throat] or [background noise]
     transcribed_clean = re.sub(r'\[.*?\]', '', transcribed_text).strip()
     if not transcribed_clean and transcribed_text:
         logger.info(f"[VERIFY] Raw transcription '{transcribed_text}' was entirely bracketed noise — returning 0%")
         return False, 0
 
-    def normalize(text):
-        if has_devanagari(text):
-            text = devanagari_to_latin(text)
-        # Lowercase, trim
-        text = text.lower().strip()
-        # Remove punctuation
-        text = re.sub(r'[^\w\s]', '', text)
-        # Collapse repeated whitespace
-        text = re.sub(r'\s+', ' ', text)
-        return text
-
-    target = normalize(target_word)
-    transcribed = normalize(transcribed_clean if transcribed_clean else transcribed_text)
+    target = _normalize_text(target_word)
+    transcribed = _normalize_text(transcribed_clean if transcribed_clean else transcribed_text)
 
     logger.info(f"Verification - Target: '{target}', Transcribed: '{transcribed}'")
 
@@ -285,47 +385,11 @@ def verify_word(target_word, transcribed_text):
         logger.info(f"[VERIFY] Transcription '{transcribed}' identified as noise/hallucination — returning 0%")
         return False, 0
 
-    if target == transcribed:
-        return True, 100
-
-    # Also check if target word appears anywhere in a longer transcription
-    # (user may have said extra words around the target)
-    if target in transcribed.split():
-        return True, 100
-
-    # Calculate base accuracy using Levenshtein distance
-    distance = levenshtein_distance(target, transcribed)
-    max_len = max(len(target), len(transcribed))
-    accuracy = max(0, int((1 - distance / max_len) * 100))
-
-    # Phonetic check for transliterations / minor phonetic variations
-    target_phonetic = normalize_phonetics(target)
-    transcribed_phonetic = normalize_phonetics(transcribed)
-    if target_phonetic == transcribed_phonetic:
-        accuracy = max(accuracy, 95)
-
-    # Check explicitly defined phonetic variants for target word
-    known_variants = PHONETIC_VARIANTS.get(target, [])
-    if transcribed in known_variants:
-        accuracy = max(accuracy, 95)
-
-    for tw in transcribed.split():
-        if tw in known_variants:
-            accuracy = max(accuracy, 90)
-
-    # Partial credit: if transcription starts with same letter as target
-    # and is within 2 edits, boost score
-    if transcribed and target and transcribed[0] == target[0] and distance <= 2:
-        accuracy = max(accuracy, 85)
-
-    # If the transcribed word is a substring of target or vice versa, give partial credit
-    if len(transcribed) >= 3 and (transcribed in target or target in transcribed):
-        accuracy = max(accuracy, 80)
-
-    # Threshold for "Correct": exact match or high accuracy (>= 80%)
-    is_correct = accuracy >= 80
-
-    return is_correct, accuracy
+    # Route to phrase scoring (>1 word) or single-word scoring
+    if len(target.split()) > 1:
+        return _score_phrase(target, transcribed)
+    else:
+        return _score_single_word(target, transcribed)
 
 @app.route('/record', methods=["POST"])
 def record():
@@ -441,25 +505,34 @@ def record():
         return jsonify({"error": str(e), "stage": "flask-backend"}), 500
 
 
-@app.route("/remedy/<int:averagePercentage>", methods=["GET", "POST"])
-def remedy(averagePercentage):
+@app.route("/remedy/<letter>/<int:averagePercentage>", methods=["GET", "POST"])
+def remedy(letter, averagePercentage):
+    """Return remediation tips for a given letter and accuracy percentage."""
     try:
-        if not COUPLED:
-            return jsonify({"error": "No letter selected"}), 400
-
+        letter_upper = letter.upper()
         if averagePercentage <= 50:
-            remedy_text = REMEDY.get(COUPLED, ["Practice the pronunciation more carefully."])
-            result = {
-                "remedy": remedy_text
-            }
+            remedy_text = REMEDY.get(letter_upper, ["Practice the pronunciation more carefully and speak slowly."])
+            result = {"remedy": remedy_text, "letter": letter_upper}
         else:
-            result = {
-                "remedy": ""
-            }
-
+            result = {"remedy": [], "letter": letter_upper}
         return jsonify(result)
     except Exception as e:
         print(f"Error in remedy endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# Legacy endpoint — kept for backward compatibility, letter resolved from query param
+@app.route("/remedy/<int:averagePercentage>", methods=["GET", "POST"])
+def remedy_legacy(averagePercentage):
+    letter = request.args.get('letter', 'A').upper()
+    try:
+        if averagePercentage <= 50:
+            remedy_text = REMEDY.get(letter, ["Practice the pronunciation more carefully."])
+            result = {"remedy": remedy_text, "letter": letter}
+        else:
+            result = {"remedy": [], "letter": letter}
+        return jsonify(result)
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
@@ -486,53 +559,69 @@ def get_letters():
 
 @app.route("/test/<lettergiven>")
 def test(lettergiven):
-    print(lettergiven)
-    global COUPLED
-    COUPLED = ""
-    COUPLED = lettergiven
-
+    letter = lettergiven.upper()
     try:
-        # Get the example word for this letter
-        example_word = EXAMPLE.get(COUPLED)
+        example_word = EXAMPLE.get(letter)
         if not example_word:
-            return jsonify({"error": f"No example found for letter {COUPLED}"}), 404
+            return jsonify({"error": f"No example found for letter {letter}"}), 404
 
         word_data = {
             "word1": example_word,
-            "letter": COUPLED,
+            "letter": letter,
             "pronunciation": PRONUNCIATION.get(example_word, ""),
-            "image_link": IMAGE.get(COUPLED, "")
+            "image_link": IMAGE.get(letter, ""),
+            "phrase": PHRASES.get(letter, example_word),
+            "phrase_pronunciation": PHRASE_PRONUNCIATION.get(letter, ""),
         }
-
-        print(COUPLED)
         return jsonify(word_data)
     except Exception as e:
         print(f"Error in test endpoint: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/generate_word/<lettergiven>")
 def generate_word(lettergiven):
-    print(lettergiven)
-    global COUPLED
-    COUPLED = ""
-    COUPLED = lettergiven
-
+    letter = lettergiven.upper()
     try:
-        # Get the example word for this letter
-        example_word = EXAMPLE.get(COUPLED)
+        example_word = EXAMPLE.get(letter)
         if not example_word:
-            return jsonify({"error": f"No example found for letter {COUPLED}"}), 404
+            return jsonify({"error": f"No example found for letter {letter}"}), 404
 
         word_data = {
             "word1": example_word,
-            "letter": COUPLED,
-            "pronunciation": PRONUNCIATION.get(example_word, "")
+            "letter": letter,
+            "pronunciation": PRONUNCIATION.get(example_word, ""),
+            "phrase": PHRASES.get(letter, example_word),
+            "phrase_pronunciation": PHRASE_PRONUNCIATION.get(letter, ""),
         }
-
-        print(COUPLED)
         return jsonify(word_data)
     except Exception as e:
         print(f"Error in generate_word endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/tts', methods=['POST'])
+def text_to_speech():
+    data = request.get_json()
+    text = data.get('text', '').strip()
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+    try:
+        audio_generator = client.text_to_speech.convert(
+            voice_id="21m00Tcm4TlvDq8ikWAM",
+            model_id="eleven_multilingual_v2",
+            text=text,
+            voice_settings={
+                "stability": 0.5,
+                "similarity_boost": 0.75,
+                "style": 0.0,
+                "use_speaker_boost": True
+            }
+        )
+        audio_bytes = b"".join(audio_generator)
+        return Response(audio_bytes, mimetype='audio/mpeg')
+    except Exception as e:
+        print(f"TTS error: {e}")
         return jsonify({"error": str(e)}), 500
 
 

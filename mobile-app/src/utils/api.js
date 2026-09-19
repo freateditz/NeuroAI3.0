@@ -1,7 +1,7 @@
 import phonemeAnalyzer from "../ai/phonemeAnalyzer";
 import speechRecognition from "../ai/speechRecognition";
 
-const API_BASE_URL = "https://neuro-ai-3ipn.onrender.com/api";
+const API_BASE_URL = "https://dbw45q7c-8000.inc1.devtunnels.ms/api";
 
 // Hardcoded words for each letter with phonetics
 const LETTER_WORDS = {

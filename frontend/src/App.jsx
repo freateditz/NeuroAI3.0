@@ -16,11 +16,13 @@ import ShareWithParent from "./Pages/ShareWithParent";
 import LearningPath from "./Pages/LearningPath";
 import LearningModule from "./Pages/LearningModule";
 import ParentProtectedRoute from "./Components/ParentProtectedRoute";
+import ThemeTransitionOverlay from "./Components/ThemeTransitionOverlay";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 export default function App() {
     return (
         <ThemeProvider>
+            <ThemeTransitionOverlay />
             <BrowserRouter>
                 <Nav />
                 <Routes>
