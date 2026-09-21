@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
     systemPrompt += `\n\nStudent progress context:\n- Tests completed: ${userContext.completedTests || 0}/${userContext.totalTests || 0}\n- Average accuracy: ${userContext.averageAccuracy || 0}%\n- Best phoneme: ${userContext.bestLetter || 'unknown'}\n- Needs most help with: ${userContext.worstLetter || 'unknown'}\nPersonalize your advice to this student's specific progress.`;
   }
 
-  const models = ['llama3-70b-8192', 'mixtral-8x7b-32768', 'llama3-8b-8192'];
+  const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'];
   let lastError = null;
 
   for (const model of models) {
