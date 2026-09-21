@@ -467,12 +467,8 @@ const Overalltest = () => {
               </div>
 
               <div className="text-center">
-                {/* Featured Word */}
-                <div className="text-white/25 font-inter text-xs uppercase tracking-[0.2em] mb-1">Featured Sound · /{letter}/</div>
-                <div className="font-cormorant font-light mb-1 capitalize" style={{ fontSize: 'clamp(2rem,6vw,3.5rem)', ...gradientHeading }}>
-                  {word}
-                </div>
-                <div className="text-white/25 font-mono text-sm mb-5">{pronounciation}</div>
+                {/* Phoneme badge */}
+                <div className="text-white/25 font-inter text-xs uppercase tracking-[0.2em] mb-5">Featured Sound · /{letter}/</div>
 
                 {/* Phrase to say */}
                 <div className="rounded-2xl border border-indigo-500/20 p-5 mb-6 text-center" style={{ background: 'rgba(99,102,241,0.06)' }}>

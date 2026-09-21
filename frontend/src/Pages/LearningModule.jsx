@@ -237,15 +237,25 @@ export default function LearningModule() {
   const analyzeRecording = async (blob, ext = 'webm') => {
     try {
       const ph = currentStep?.phoneme;
+      const activityType = task?.activityType;
       let targetWord = ph;
-      if (ph && ph !== 'FLUENCY' && ph !== 'MASTERY') {
+
+      if (ph === 'FLUENCY' || ph === 'MASTERY') {
+        // Full phrase target for fluency/mastery activities
+        targetWord = STORY_PHRASES[ph] || 'practice';
+      } else if (ph) {
         try {
           const wRes = await fetch(`${API_URL}/api/test/word/${ph}`);
           const wData = await wRes.json();
-          if (wData.success) targetWord = wData.data.word1 || ph;
+          if (wData.success) {
+            // For story/reading steps, use the full phrase; for drill/phonics, use the word
+            if (activityType === 'story' || activityType === 'reading') {
+              targetWord = wData.data.phrase || wData.data.word1 || ph;
+            } else {
+              targetWord = wData.data.word1 || ph;
+            }
+          }
         } catch { /* use phoneme as fallback */ }
-      } else if (ph === 'FLUENCY' || ph === 'MASTERY') {
-        targetWord = STORY_PHRASES[ph]?.split(' ')[0] || 'practice';
       }
 
       const form = new FormData();

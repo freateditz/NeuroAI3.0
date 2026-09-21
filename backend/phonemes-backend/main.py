@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import os
 import io
 import re
+import uuid
 import logging
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -44,14 +45,25 @@ CORS(app,
 # Load environment variables
 load_dotenv()
 ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
-OPEN_API_KEY = os.getenv('OPEN_API_KEY') or os.getenv('GROQ_API_KEY')
+GROQ_API_KEY = os.getenv('GROQ_API_KEY') or os.getenv('OPEN_API_KEY')
 
-# Initialize ElevenLabs client
+# ElevenLabs client — used for TTS only
 client = ElevenLabs(api_key=ELEVENLABS_API_KEY) if ELEVENLABS_API_KEY else None
 
-# Validate API key
+# Groq client — used for STT (Whisper, no keyterm-biasing hallucinations)
+groq_client = None
+try:
+    from groq import Groq as GroqClient
+    if GROQ_API_KEY:
+        groq_client = GroqClient(api_key=GROQ_API_KEY)
+        logger.info("Groq STT client initialized (whisper-large-v3-turbo)")
+    else:
+        logger.warning("GROQ_API_KEY not set — STT will fall back to ElevenLabs without keyterms")
+except ImportError:
+    logger.warning("groq package not installed — STT will fall back to ElevenLabs")
+
 if not ELEVENLABS_API_KEY:
-    logger.warning("ELEVENLABS_API_KEY not found in environment variables!")
+    logger.warning("ELEVENLABS_API_KEY not found — TTS will be unavailable")
 SOUND_REFERENCE = {
     'A': 'E',
     'B': 'V',
@@ -337,10 +349,11 @@ def _score_single_word(target, transcribed):
 def _score_phrase(target_phrase, transcribed):
     """
     Word-level scoring for multi-word phrases.
-    Matches each significant target word against any transcribed word using Levenshtein.
+    Checks all content words (len >= 2) against transcribed words.
     Returns (is_correct, accuracy).
     """
-    target_words = [w for w in target_phrase.split() if len(w) >= 3]
+    # Include all words with 2+ chars to avoid filtering out short key words like "an", "a", "in"
+    target_words = [w for w in target_phrase.split() if len(w) >= 2]
     transcribed_words = transcribed.split()
 
     if not target_words:
@@ -359,11 +372,12 @@ def _score_phrase(target_phrase, transcribed):
             for variant in PHONETIC_VARIANTS[tw]:
                 if variant in transcribed_words:
                     best_sim = max(best_sim, 95)
-        if best_sim >= 65:
+        # Use 70% threshold (up from 65%) to reduce false positives
+        if best_sim >= 70:
             matched += 1
 
     accuracy = int((matched / len(target_words)) * 100)
-    is_correct = accuracy >= 55
+    is_correct = accuracy >= 60
     return is_correct, accuracy
 
 
@@ -399,28 +413,49 @@ def verify_word(target_word, transcribed_text):
     else:
         return _score_single_word(target, transcribed)
 
+def _transcribe_with_groq(filename):
+    """Transcribe audio using Groq Whisper (no keyterm biasing, unbiased output)."""
+    with open(filename, "rb") as f:
+        transcription = groq_client.audio.transcriptions.create(
+            file=(os.path.basename(filename), f.read()),
+            model="whisper-large-v3-turbo",
+            language="en",
+            response_format="text",
+        )
+    # Groq returns a plain string in text response_format
+    return transcription.strip() if isinstance(transcription, str) else str(transcription).strip()
+
+
+def _transcribe_with_elevenlabs(filename):
+    """Transcribe audio using ElevenLabs Scribe (fallback, no keyterms to avoid bias)."""
+    with open(filename, "rb") as f:
+        transcription = client.speech_to_text.convert(
+            file=f,
+            model_id="scribe_v2",
+            language_code="en",
+            tag_audio_events=False,
+        )
+    return (transcription.text if hasattr(transcription, 'text') else str(transcription)).strip()
+
+
 @app.route('/record', methods=["POST"])
 def record():
     logger.info("[FLASK] Request received at /record")
+    # Use a unique filename per request to prevent concurrent-request collisions
+    filename = None
     try:
-        # Check if audio file and target word are in the request
         if 'audio' not in request.files:
-            logger.error("[FLASK] No audio file provided in request")
             return jsonify({"error": "No audio file provided"}), 400
 
         target_word = request.form.get('targetWord')
-        logger.info(f"[FLASK] targetWord received: {target_word}")
         if not target_word:
-            logger.error("[FLASK] No targetWord provided in request")
             return jsonify({"error": "No target word provided"}), 400
 
         audio_file = request.files['audio']
-        logger.info(f"[FLASK] audio received: {audio_file.filename}, content_type: {audio_file.content_type}")
-
         if audio_file.filename == '':
             return jsonify({"error": "No audio file selected"}), 400
 
-        # Determine correct file extension based on filename / content type
+        # Determine extension
         ext = ".webm"
         if audio_file.filename and '.' in audio_file.filename:
             ext = os.path.splitext(audio_file.filename)[1].lower()
@@ -432,85 +467,79 @@ def record():
             elif "ogg" in audio_file.content_type:
                 ext = ".ogg"
 
-        # Save the uploaded audio file with correct extension
-        filename = f"temp_audio{ext}"
+        # Unique filename prevents file collisions across concurrent requests
+        filename = f"temp_audio_{uuid.uuid4().hex}{ext}"
         audio_file.save(filename)
-        logger.info(f"[FLASK] Audio file saved as {filename}")
+        logger.info(f"[FLASK] Audio saved as {filename}, target: '{target_word}'")
 
-        # ── NOISE GUARD: reject recordings that are too short (< 3 KB = silent/noise) ──
         audio_size = os.path.getsize(filename)
-        logger.info(f"[FLASK] Audio file size: {audio_size} bytes")
+        logger.info(f"[FLASK] Audio size: {audio_size} bytes")
         if audio_size < 3000:
-            logger.warning(f"[FLASK] Audio too short ({audio_size} bytes) — treating as silence")
+            logger.warning(f"[FLASK] Audio too short ({audio_size} bytes) — silence/noise")
             return jsonify({
                 "success": True,
                 "transcript": "",
                 "isCorrect": False,
                 "accuracy": 0,
-                "note": "Recording too short or silent — please speak clearly and hold the button longer."
+                "note": "Recording too short — please speak clearly and hold the button longer."
             })
 
-        # Initialize ElevenLabs client if not already done
-        if not client:
-            logger.error("[FLASK] ElevenLabs client not initialized")
-            return jsonify({"error": "ElevenLabs API key not configured"}), 500
+        # Choose STT provider: Groq Whisper (preferred, no bias) → ElevenLabs (fallback)
+        transcribed_text = ""
+        stt_provider = "none"
+        if groq_client:
+            try:
+                transcribed_text = _transcribe_with_groq(filename)
+                stt_provider = "groq"
+                logger.info(f"[GROQ] Transcription: '{transcribed_text}'")
+            except Exception as e:
+                logger.warning(f"[GROQ] Failed ({e}), falling back to ElevenLabs")
 
-        # Transcribe audio using ElevenLabs with keyword biasing toward target word and all phonetic variants
-        logger.info("[ELEVENLABS] API request started with language_code='en', tag_audio_events=False, and keyterms")
-        with open(filename, "rb") as file:
-            target_lower = target_word.lower()
-            target_cap = target_word.capitalize()
-            target_upper = target_word.upper()
-            variants = PHONETIC_VARIANTS.get(target_lower, [])
-            keyterms_list = list(set([target_lower, target_cap, target_upper] + variants))
+        if not transcribed_text and client:
+            try:
+                transcribed_text = _transcribe_with_elevenlabs(filename)
+                stt_provider = "elevenlabs"
+                logger.info(f"[ELEVENLABS] Transcription: '{transcribed_text}'")
+            except Exception as e:
+                logger.error(f"[ELEVENLABS] Also failed: {e}")
 
-            transcription = client.speech_to_text.convert(
-                file=file,
-                model_id="scribe_v2",
-                language_code="en",
-                tag_audio_events=False,
-                keyterms=keyterms_list
-            )
+        if not groq_client and not client:
+            return jsonify({"error": "No STT provider configured"}), 500
 
-        # transcription.text holds the result
-        transcribed_text = transcription.text if hasattr(transcription, 'text') else str(transcription)
-        transcribed_text = transcribed_text.strip()
-
-        logger.info(f"[ELEVENLABS] Raw Transcription: '{transcribed_text}'")
-
-        # Reject clearly empty transcriptions
         if not transcribed_text:
-            logger.warning("[FLASK] Empty transcription from ElevenLabs")
             return jsonify({
                 "success": True,
                 "transcript": "",
                 "isCorrect": False,
                 "accuracy": 0,
-                "note": "Could not detect any speech. Please speak louder and more clearly."
+                "note": "Could not detect speech. Please speak louder and more clearly."
             })
 
-        # If transcription is in Devanagari/Hindi, transliterate it to Latin English
+        # Transliterate Hindi/Devanagari if present
         if has_devanagari(transcribed_text):
-            latin_converted = devanagari_to_latin(transcribed_text)
-            logger.info(f"[TRANSLITERATE] Converted Devanagari '{transcribed_text}' -> '{latin_converted}'")
-            transcribed_text = latin_converted
+            transcribed_text = devanagari_to_latin(transcribed_text)
+            logger.info(f"[TRANSLITERATE] -> '{transcribed_text}'")
 
-        logger.info(f"[VERIFY] Transcription: '{transcribed_text}', Target: '{target_word}'")
-        # Verify transcription
         is_correct, accuracy = verify_word(target_word, transcribed_text)
-        logger.info(f"[VERIFY] Result - Correct: {is_correct}, Accuracy: {accuracy}")
+        logger.info(f"[VERIFY] provider={stt_provider}, target='{target_word}', got='{transcribed_text}', accuracy={accuracy}%")
 
-        logger.info("[RESPONSE] Returning final JSON result")
         return jsonify({
             "success": True,
             "transcript": transcribed_text,
             "isCorrect": is_correct,
-            "accuracy": accuracy
+            "accuracy": accuracy,
         })
 
     except Exception as e:
-        logger.error(f"[RESPONSE] Error in record endpoint: {str(e)}", exc_info=True)
+        logger.error(f"[RECORD] Error: {str(e)}", exc_info=True)
         return jsonify({"error": str(e), "stage": "flask-backend"}), 500
+    finally:
+        # Always clean up temp file to avoid stale audio being re-read
+        if filename and os.path.exists(filename):
+            try:
+                os.remove(filename)
+            except Exception:
+                pass
 
 
 @app.route("/remedy/<letter>/<int:averagePercentage>", methods=["GET", "POST"])
