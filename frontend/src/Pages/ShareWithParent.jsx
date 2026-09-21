@@ -125,7 +125,7 @@ export default function ShareWithParent() {
               className="rounded-2xl border border-white/8 p-8 mb-3 mx-4"
               style={{ background: 'rgba(99,102,241,0.06)' }}
             >
-              <span className="font-mono text-5xl font-bold tracking-[0.35em] text-indigo-300 select-all">
+              <span className="font-mono text-3xl sm:text-5xl font-bold tracking-[0.2em] sm:tracking-[0.35em] text-indigo-300 select-all break-all">
                 {inviteCode}
               </span>
             </div>

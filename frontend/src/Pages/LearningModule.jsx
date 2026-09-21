@@ -565,7 +565,7 @@ export default function LearningModule() {
                   </span>
                 </div>
                 {feedback.accuracy !== undefined && (
-                  <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                     {[
                       { label: 'You Said', value: `"${feedback.transcript}"` },
                       { label: 'Target', value: `"${feedback.targetWord}"` },

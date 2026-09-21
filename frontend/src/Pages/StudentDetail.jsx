@@ -46,8 +46,8 @@ const StudentDetail = () => {
   const learningPath = progress?.learningPath;
 
   return (
-    <div className="md:px-[9rem] pb-[4rem] font-spacegroteskmedium min-h-screen">
-      <div className="mb-10 mt-10 flex justify-between items-center">
+    <div className="px-4 md:px-[9rem] pb-[4rem] font-spacegroteskmedium min-h-screen pt-20">
+      <div className="mb-10 mt-4 flex flex-wrap justify-between items-start gap-4">
         <div>
           <h1 className="text-4xl font-bold mb-2">{student?.name || 'Student'}'s Progress</h1>
           <p className="text-gray-600">Grade: {student?.grade_level || 'N/A'}</p>
@@ -125,7 +125,7 @@ const StudentDetail = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
         <div>
           <h2 className="text-2xl font-bold mb-6">Course Progress</h2>
           <div className="space-y-4">
@@ -152,7 +152,7 @@ const StudentDetail = () => {
 
         <div>
           <h2 className="text-2xl font-bold mb-6">Test Accuracy per Letter</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {testResults.map((tr, index) => (
               <div key={index} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
                 <span className="text-xl font-bold text-gray-700">{tr.letter}</span>

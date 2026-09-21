@@ -263,7 +263,7 @@ export default function TestDashboard() {
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
                   {['Letter', 'Word', 'Attempts', 'Avg Accuracy', 'Status', 'Action'].map((h) => (
-                    <th key={h} className="px-6 py-3 text-left text-white/25 font-inter text-xs uppercase tracking-wider">{h}</th>
+                    <th key={h} className="px-3 sm:px-6 py-3 text-left text-white/25 font-inter text-xs uppercase tracking-wider whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -276,17 +276,17 @@ export default function TestDashboard() {
                   </tr>
                 ) : allTests.map((test) => (
                   <tr key={test._id} className="border-t border-white/4 transition-colors hover:bg-white/3">
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span className="font-cormorant text-2xl text-white/70">{test.letter}</span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-white/60 font-inter text-sm">{test.word}</div>
-                      <div className="text-white/25 font-inter text-xs">{test.pronunciation}</div>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="text-white/60 font-inter text-sm whitespace-nowrap">{test.word}</div>
+                      <div className="text-white/25 font-inter text-xs hidden sm:block">{test.pronunciation}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span className="text-white/50 font-inter text-sm">{test.attempts.length}/3</span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span className={`font-inter text-sm font-medium ${
                         test.averageAccuracy >= 70 ? 'text-teal-400' :
                         test.averageAccuracy >= 50 ? 'text-yellow-400' : 'text-red-400'
@@ -294,21 +294,21 @@ export default function TestDashboard() {
                         {test.averageAccuracy}%
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full font-inter text-xs ${
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <span className={`px-2 sm:px-3 py-1 rounded-full font-inter text-xs whitespace-nowrap ${
                         test.completed
                           ? 'bg-teal-400/10 text-teal-400 border border-teal-400/20'
                           : 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20'
                       }`}>
-                        {test.completed ? 'Completed' : 'In Progress'}
+                        {test.completed ? 'Done' : 'In Progress'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <button
                         onClick={() => navigate('/overalltest')}
-                        className="text-indigo-400 font-inter text-sm hover:text-indigo-300 transition-colors"
+                        className="text-indigo-400 font-inter text-sm hover:text-indigo-300 transition-colors whitespace-nowrap"
                       >
-                        {test.completed ? 'Review' : 'Continue'} →
+                        {test.completed ? 'Review' : 'Go'} →
                       </button>
                     </td>
                   </tr>

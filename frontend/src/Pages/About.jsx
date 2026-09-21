@@ -161,7 +161,7 @@ export default function About() {
           </div>
 
           {/* Tab content */}
-          <div className="rounded-3xl border border-white/8 p-10 min-h-[280px] flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}>
+          <div className="rounded-3xl border border-white/8 p-5 sm:p-10 min-h-[280px] flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}>
             {activeTab === 'mission' && (
               <div className="text-center max-w-2xl">
                 <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-6 text-2xl">⚡</div>
@@ -265,7 +265,7 @@ export default function About() {
 
       {/* CTA */}
       <section className="relative z-10 py-24 px-6">
-        <div className="max-w-3xl mx-auto rounded-3xl border border-white/8 p-12 text-center relative overflow-hidden" style={{ background: 'rgba(99,102,241,0.06)' }}>
+        <div className="max-w-3xl mx-auto rounded-3xl border border-white/8 p-6 sm:p-12 text-center relative overflow-hidden" style={{ background: 'rgba(99,102,241,0.06)' }}>
           <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)' }} />
           <div className="relative z-10">
             <p className="text-indigo-400 font-inter text-xs uppercase tracking-[0.2em] mb-5">Get Started</p>

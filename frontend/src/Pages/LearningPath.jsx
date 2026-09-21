@@ -154,7 +154,7 @@ export default function LearningPath() {
               </h1>
               <p className="text-white/35 font-inter font-light text-sm max-w-xl">{path.planSummary}</p>
             </div>
-            <div className="flex gap-4 shrink-0">
+            <div className="flex gap-4 flex-wrap">
               <div className="rounded-2xl border border-white/8 px-5 py-3 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <div className="font-cormorant text-3xl text-teal-400">{overallPct}%</div>
                 <div className="text-white/25 font-inter text-xs uppercase tracking-wider">Complete</div>

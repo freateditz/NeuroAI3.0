@@ -424,7 +424,7 @@ export default function Home() {
       {/* STRENGTHS */}
       <section id="strengths" className="relative py-32 overflow-hidden glow-border-bottom" style={{ background: bgAlt }}>
         <div className="relative z-10 max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-20 items-center mb-32">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center mb-32">
             <div>
               <p className={`${darkMode ? 'text-teal-400' : 'text-indigo-600'} font-inter text-xs font-medium uppercase tracking-[0.2em] mb-6`}>Speech Intelligence</p>
               <h3 className="font-cormorant leading-[0.95] tracking-tight mb-6"
@@ -442,7 +442,7 @@ export default function Home() {
             <OscilloscopePanel />
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             <CircleProgressPanel />
             <div className="lg:order-2 order-1">
               <p className={`${darkMode ? 'text-teal-400' : 'text-indigo-600'} font-inter text-xs font-medium uppercase tracking-[0.2em] mb-6`}>Adaptive AI</p>
@@ -531,7 +531,7 @@ export default function Home() {
 
       {/* CTA */}
       <section className="relative py-24 px-6 overflow-hidden glow-border-bottom" style={{ background: bgAlt }}>
-        <div className="relative z-10 max-w-3xl mx-auto rounded-2xl p-12 text-center"
+        <div className="relative z-10 max-w-3xl mx-auto rounded-2xl p-6 sm:p-12 text-center"
           style={{ background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow }}>
           <h2 className="font-cormorant leading-[0.95] tracking-tight mb-5"
             style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: darkMode ? 300 : 400, ...gradientHeading }}>
@@ -561,7 +561,7 @@ export default function Home() {
             <p className="font-inter font-light text-base" style={{ color: textFaint }}>Questions, feedback, or partnership inquiries.</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block font-inter text-xs uppercase tracking-widest mb-2" style={{ color: labelColor }}>First Name</label>
                 <input name="firstName" type="text" value={formData.firstName} onChange={handleInputChange} required placeholder="John" style={inputStyle} />
