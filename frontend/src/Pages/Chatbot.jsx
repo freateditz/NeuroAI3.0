@@ -5,6 +5,8 @@ import { API_URL } from "../url/base";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 
+const CHATBOT_URL = "https://neuroai-chatbot.onrender.com";
+
 function formatTime(date) {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }

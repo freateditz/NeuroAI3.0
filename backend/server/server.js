@@ -11,6 +11,7 @@ import courseRoutes from './routes/course.js';
 import parentRoutes from './routes/parent.js';
 import learningRoutes from './routes/learning.js';
 import chatRoutes from './routes/chat.js';
+import articlesRoutes from './routes/articles.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -64,6 +65,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/parent', parentRoutes);
 app.use('/api/learning', learningRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/articles', articlesRoutes);
 
 app.use(errorHandler);
 
