@@ -107,13 +107,13 @@ function AnimatedDashboard() {
       </div>
 
       {/* Metric tiles */}
-      <div className="grid grid-cols-3 gap-3 p-5">
+      <div className="grid grid-cols-3 gap-2 p-3 sm:gap-3 sm:p-5">
         {[
           { label: 'Session Score', value: 94, suffix: '%', color: darkMode ? '#00ffc0' : '#4338ca' },
           { label: 'Phonemes Detected', value: 247, suffix: '', color: '#7dd3fc' },
           { label: 'Day Streak', value: 7, suffix: 'd', color: '#c4b5fd' },
         ].map((m) => (
-          <div key={m.label} className="rounded-xl p-3 text-center"
+          <div key={m.label} className="rounded-xl p-2 sm:p-3 text-center"
             style={{ background: tileBg, border: `1px solid ${tileBorder}` }}>
             <div className="font-cormorant font-light text-2xl" style={{ color: m.color }}>
               <Counter target={m.value} />{m.suffix}
@@ -124,13 +124,13 @@ function AnimatedDashboard() {
       </div>
 
       {/* EQ */}
-      <div className="px-5 pb-4">
+      <div className="px-3 sm:px-5 pb-3 sm:pb-4">
         <div className="font-inter text-xs mb-2 uppercase tracking-widest" style={{ color: textFaint }}>Live Waveform</div>
         <EQBars count={30} height={56} />
       </div>
 
       {/* Phoneme breakdown */}
-      <div className="px-5 pb-5 pt-4" style={{ borderTop: `1px solid ${dividerColor}` }}>
+      <div className="px-3 sm:px-5 pb-4 pt-3 sm:pt-4" style={{ borderTop: `1px solid ${dividerColor}` }}>
         <div className="font-inter text-xs uppercase tracking-widest mb-3" style={{ color: textMuted }}>Today's Phonemes</div>
         <div className="space-y-2">
           {phonemes.map((p) => (
@@ -207,20 +207,20 @@ function OscilloscopePanel() {
     : [{ label: "Accuracy", value: "94%", color: "#4338ca" }, { label: "Fluency", value: "87%", color: "#0891b2" }, { label: "Clarity", value: "91%", color: "#7c3aed" }];
 
   return (
-    <div className="rounded-2xl p-8" style={{ background: panelBg, boxShadow: panelShadow, border: `1px solid ${borderColor}` }}>
-      <div className="flex items-center justify-between mb-6">
+    <div className="rounded-2xl p-4 sm:p-8" style={{ background: panelBg, boxShadow: panelShadow, border: `1px solid ${borderColor}` }}>
+      <div className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
           <span className="font-inter text-xs uppercase tracking-widest" style={{ color: textFaint }}>Live analysis</span>
         </div>
-        <div className="flex items-center gap-3 font-inter text-xs" style={{ color: textVfaint }}>
+        <div className="flex items-center gap-2 sm:gap-3 font-inter text-xs flex-wrap" style={{ color: textVfaint }}>
           <span className="flex items-center gap-1"><span className="w-2 h-0.5 inline-block rounded" style={{ background: darkMode ? '#00ffc0' : '#6366f1' }} />Accuracy</span>
           <span className="flex items-center gap-1"><span className="w-2 h-0.5 inline-block rounded bg-sky-300" />Fluency</span>
           <span className="flex items-center gap-1"><span className="w-2 h-0.5 inline-block rounded" style={{ background: '#c4b5fd' }} />Rhythm</span>
         </div>
       </div>
       <canvas ref={canvasRef} className="w-full" style={{ height: 80 }} />
-      <div className="grid grid-cols-3 gap-3 mt-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-4 sm:mt-6">
         {metricColors.map((m) => (
           <div key={m.label} className="text-center p-3 rounded-xl"
             style={{ background: tileBg, border: `1px solid ${tileBorder}` }}>
@@ -282,9 +282,9 @@ function CircleProgressPanel() {
   const tipText = darkMode ? 'rgba(255,255,255,0.35)' : 'rgba(28,19,8,0.55)';
 
   return (
-    <div className="rounded-2xl p-8" style={{ background: panelBg, boxShadow: panelShadow, border: `1px solid ${borderColor}` }}>
-      <p className="font-inter text-xs uppercase tracking-widest mb-6" style={{ color: textFaint }}>Learning Progress</p>
-      <div className="grid grid-cols-2 gap-6 justify-items-center">
+    <div className="rounded-2xl p-4 sm:p-8" style={{ background: panelBg, boxShadow: panelShadow, border: `1px solid ${borderColor}` }}>
+      <p className="font-inter text-xs uppercase tracking-widest mb-4 sm:mb-6" style={{ color: textFaint }}>Learning Progress</p>
+      <div className="grid grid-cols-2 gap-4 sm:gap-6 justify-items-center">
         {metrics.map((m) => <CircleRing key={m.label} pct={m.pct} color={m.color} label={m.label} size={100} darkMode={darkMode} />)}
       </div>
       <div className="mt-6 p-4 rounded-xl" style={{ background: tipBg, border: `1px solid ${tipBorder}` }}>
@@ -358,11 +358,11 @@ export default function Home() {
       <SonicWaveformHero onGetStarted={getStarted} onExplore={scrollToFeatures} />
 
       {/* STATS */}
-      <section className="relative py-28 overflow-hidden glow-border-bottom" style={{ background: bg }}>
+      <section className="relative py-14 sm:py-28 overflow-hidden glow-border-bottom" style={{ background: bg }}>
         <div className="absolute left-0 w-[80%] h-64 pointer-events-none"
           style={{ background: darkMode ? 'rgb(54,157,253)' : 'rgba(99,102,241,0.12)', filter: 'blur(337px)', transform: 'translateY(-50%) rotate(-25deg)', top: '50%', opacity: darkMode ? 0.4 : 0.7 }} />
         <div className="relative z-10 max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-10 sm:mb-20">
             {[
               { value: '8+', label: 'Speech Disorders', sub: 'Supported' },
               { value: '3D', label: 'Mouth', sub: 'Articulation Model' },
@@ -389,9 +389,9 @@ export default function Home() {
       </section>
 
       {/* FEATURES */}
-      <section ref={featuresRef} id="features" className="relative py-32 overflow-hidden glow-border-bottom" style={{ background: bg }}>
+      <section ref={featuresRef} id="features" className="relative py-16 sm:py-32 overflow-hidden glow-border-bottom" style={{ background: bg }}>
         <div className="relative z-10 max-w-7xl mx-auto px-6">
-          <div className="mb-20">
+          <div className="mb-10 sm:mb-20">
             <p className={`${darkMode ? 'text-teal-400' : 'text-indigo-600'} font-inter text-xs font-medium uppercase tracking-[0.2em] mb-5`}>What we offer</p>
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <h2 className="font-cormorant leading-[0.95] tracking-tight max-w-lg"
@@ -407,7 +407,7 @@ export default function Home() {
             style={{ background: featureGridBg, border: `1px solid ${cardBorder}` }}>
             {features.map((f) => (
               <TiltCard key={f.title} effect="gravitate" tiltLimit={8} style={{ background: bg }}>
-                <div className="p-8 h-full transition-colors duration-300"
+                <div className="p-5 sm:p-8 h-full transition-colors duration-300"
                   style={{ background: 'transparent' }}>
                   <div className="text-3xl mb-5">{f.icon}</div>
                   <h3 className="font-inter font-semibold text-sm mb-3"
@@ -422,9 +422,9 @@ export default function Home() {
       </section>
 
       {/* STRENGTHS */}
-      <section id="strengths" className="relative py-32 overflow-hidden glow-border-bottom" style={{ background: bgAlt }}>
+      <section id="strengths" className="relative py-16 sm:py-32 overflow-hidden glow-border-bottom" style={{ background: bgAlt }}>
         <div className="relative z-10 max-w-7xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center mb-32">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center mb-16 sm:mb-32">
             <div>
               <p className={`${darkMode ? 'text-teal-400' : 'text-indigo-600'} font-inter text-xs font-medium uppercase tracking-[0.2em] mb-6`}>Speech Intelligence</p>
               <h3 className="font-cormorant leading-[0.95] tracking-tight mb-6"
@@ -468,7 +468,7 @@ export default function Home() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="relative py-32 overflow-hidden glow-border-bottom" style={{ background: bg }}>
+      <section id="pricing" className="relative py-16 sm:py-32 overflow-hidden glow-border-bottom" style={{ background: bg }}>
         <div className="relative z-10 max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
             <p className={`${darkMode ? 'text-teal-400' : 'text-indigo-600'} font-inter text-xs font-medium uppercase tracking-[0.2em] mb-5`}>Pricing</p>
@@ -480,7 +480,7 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <TiltCard effect="gravitate" tiltLimit={8} className="rounded-2xl">
-              <div className="h-full p-8 rounded-2xl transition-colors" style={{ background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow }}>
+              <div className="h-full p-5 sm:p-8 rounded-2xl transition-colors" style={{ background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow }}>
                 <h3 className="font-inter font-semibold text-lg mb-1" style={{ color: darkMode ? '#fff' : '#1c1308' }}>Freemium</h3>
                 <p className="font-inter text-xs mb-7" style={{ color: textFaint }}>Perfect for getting started</p>
                 <div className="mb-8">
@@ -504,7 +504,7 @@ export default function Home() {
             </TiltCard>
 
             <TiltCard effect="gravitate" tiltLimit={8} className="rounded-2xl">
-              <div className="relative h-full p-8 rounded-2xl overflow-hidden"
+              <div className="relative h-full p-5 sm:p-8 rounded-2xl overflow-hidden"
                 style={{ background: darkMode ? 'rgba(0,255,192,0.03)' : 'linear-gradient(145deg, #f0eeff, #e4dfff)', border: `1px solid ${darkMode ? 'rgba(0,255,192,0.15)' : 'rgba(99,102,241,0.3)'}`, boxShadow: darkMode ? 'none' : '7px 7px 18px rgba(160,148,130,0.4), -4px -4px 12px rgba(255,255,255,0.9)' }}>
                 <div className="absolute top-5 right-5 px-2.5 py-1 rounded-full font-inter text-xs"
                   style={{ color: darkMode ? '#2dd4bf' : '#4338ca', background: darkMode ? 'rgba(0,255,192,0.06)' : 'rgba(99,102,241,0.1)', border: `1px solid ${darkMode ? 'rgba(0,255,192,0.2)' : 'rgba(99,102,241,0.3)'}` }}>Popular</div>
@@ -530,7 +530,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="relative py-24 px-6 overflow-hidden glow-border-bottom" style={{ background: bgAlt }}>
+      <section className="relative py-12 sm:py-24 px-6 overflow-hidden glow-border-bottom" style={{ background: bgAlt }}>
         <div className="relative z-10 max-w-3xl mx-auto rounded-2xl p-6 sm:p-12 text-center"
           style={{ background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow }}>
           <h2 className="font-cormorant leading-[0.95] tracking-tight mb-5"
@@ -550,7 +550,7 @@ export default function Home() {
       </section>
 
       {/* CONTACT */}
-      <section id="contact" className="relative py-32 px-6 overflow-hidden" style={{ background: bg }}>
+      <section id="contact" className="relative py-16 sm:py-32 px-6 overflow-hidden" style={{ background: bg }}>
         <div className="relative z-10 max-w-2xl mx-auto">
           <div className="mb-16">
             <p className={`${darkMode ? 'text-teal-400' : 'text-indigo-600'} font-inter text-xs font-medium uppercase tracking-[0.2em] mb-5`}>Contact</p>

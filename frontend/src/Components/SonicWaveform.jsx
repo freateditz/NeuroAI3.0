@@ -122,12 +122,12 @@ export default function SonicWaveformHero({ onGetStarted, onExplore }) {
 
         <motion.div
           custom={1} variants={fadeUp} initial="hidden" animate="visible"
-          className="mb-8 whitespace-nowrap"
+          className="mb-8"
         >
           <BubbleText
             text="Speak. Learn. Thrive."
-            headingClassName={`font-cormorant font-light tracking-tight whitespace-nowrap ${headingColor}`}
-            style={{ fontSize: 'clamp(3.5rem, 9vw, 8rem)', lineHeight: 0.95 }}
+            headingClassName={`font-cormorant font-light tracking-tight ${headingColor}`}
+            style={{ fontSize: 'clamp(2rem, 9vw, 8rem)', lineHeight: 0.95 }}
           />
         </motion.div>
 
