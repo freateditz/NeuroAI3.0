@@ -27,7 +27,7 @@ services:
     env: python
     rootDir: backend/phonemes-backend
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn main:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT main:app
     envVars:
       - key: GROQ_API_KEY
         sync: false
