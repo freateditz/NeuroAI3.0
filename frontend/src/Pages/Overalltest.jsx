@@ -98,7 +98,7 @@ const Overalltest = () => {
               const loadedAttempts = progressData.data.attempts.map((a, i) => ({
                 attemptNumber: a.attemptNumber || i + 1,
                 accuracy: a.accuracy,
-                transcript: a.transcript || wordData.data.word1
+                transcript: a.transcript || wordData.data?.word1 || ""
               }));
               setAttempts(loadedAttempts);
               setCompletedTestsMap(prev => ({ ...prev, [letter]: true }));

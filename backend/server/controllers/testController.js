@@ -4,28 +4,45 @@ import TestResult from "../models/TestResult.js";
 import Course from "../models/Course.js";
 import { generateLearningPath } from "../services/learningPathService.js";
 
-const PHONEME_API_URL = process.env.PHONEME_API_URL || "http://127.0.0.1:5002";
+const getPhonemeUrl = () => {
+    let url = process.env.PHONEME_API_URL || "http://127.0.0.1:5002";
+    return url.replace(/\/+$/, '');
+};
+
+const FALLBACK_WORDS = {
+    'A': { word1: 'Apple', letter: 'A', pronunciation: 'ˈæp.əl', phrase: 'An apple a day', phrase_pronunciation: 'æn ˈæp.əl ə deɪ', image_link: 'https://cdn-icons-png.flaticon.com/512/415/415733.png' },
+    'B': { word1: 'Ball', letter: 'B', pronunciation: 'bɔːl', phrase: 'Big blue ball', phrase_pronunciation: 'bɪɡ bluː bɔːl', image_link: 'https://cdn-icons-png.flaticon.com/512/33/33736.png' },
+    'C': { word1: 'Cat', letter: 'C', pronunciation: 'kæt', phrase: 'Cool cat sits', phrase_pronunciation: 'kuːl kæt sɪts', image_link: 'https://cdn-icons-png.flaticon.com/512/616/616430.png' },
+    'D': { word1: 'Dog', letter: 'D', pronunciation: 'dɒɡ', phrase: 'Dog digs deep', phrase_pronunciation: 'dɒɡ dɪɡz diːp', image_link: 'https://cdn-icons-png.flaticon.com/512/616/616408.png' },
+    'F': { word1: 'Fish', letter: 'F', pronunciation: 'fɪʃ', phrase: 'Five fish swim', phrase_pronunciation: 'faɪv fɪʃ swɪm', image_link: 'https://cdn-icons-png.flaticon.com/512/616/616421.png' },
+    'L': { word1: 'Lion', letter: 'L', pronunciation: 'ˈlaɪ.ən', phrase: 'Little lion leaps', phrase_pronunciation: 'ˈlɪt.əl ˈlaɪ.ən liːps', image_link: 'https://cdn-icons-png.flaticon.com/512/616/616412.png' },
+    'P': { word1: 'Pen', letter: 'P', pronunciation: 'pen', phrase: 'Pink pen please', phrase_pronunciation: 'pɪŋk pen pliːz', image_link: 'https://cdn-icons-png.flaticon.com/512/1250/1250615.png' },
+    'S': { word1: 'Sun', letter: 'S', pronunciation: 'sʌn', phrase: 'Sun sets slowly', phrase_pronunciation: 'sʌn sets ˈsləʊ.li', image_link: 'https://cdn-icons-png.flaticon.com/512/869/869869.png' },
+    'T': { word1: 'Tree', letter: 'T', pronunciation: 'triː', phrase: 'Two tall trees', phrase_pronunciation: 'tuː tɔːl triːz', image_link: 'https://cdn-icons-png.flaticon.com/512/489/489969.png' },
+    'Z': { word1: 'Zebra', letter: 'Z', pronunciation: 'ˈziː.brə', phrase: 'Zebra in zoo', phrase_pronunciation: 'ˈziː.brə ɪn zuː', image_link: 'https://cdn-icons-png.flaticon.com/512/616/616427.png' }
+};
 
 // @desc    Get word for a specific letter (from phoneme backend)
 // @route   GET /api/test/word/:letter
 // @access  Public
 export const getWordForLetter = async (req, res) => {
+    const { letter } = req.params;
+    const lUpper = (letter || 'A').toUpperCase();
+    const targetUrl = `${getPhonemeUrl()}/test/${lUpper}`;
     try {
-        const { letter } = req.params;
-
-        // Call phoneme backend /test/:letter endpoint
-        const response = await axios.get(`${PHONEME_API_URL}/test/${letter}`);
-
-        res.status(200).json({
+        console.log(`[WORD_FETCH] Fetching word for letter ${lUpper} from: ${targetUrl}`);
+        const response = await axios.get(targetUrl, { timeout: 8000 });
+        return res.status(200).json({
             success: true,
             data: response.data,
         });
     } catch (error) {
-        console.error("Error fetching word:", error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch word for letter",
-            error: error.message,
+        console.warn(`[WORD_FETCH] Failed to reach phoneme backend at ${targetUrl}: ${error.message}. Using fallback data.`);
+        const fallback = FALLBACK_WORDS[lUpper] || { word1: lUpper, letter: lUpper, pronunciation: '', phrase: lUpper };
+        return res.status(200).json({
+            success: true,
+            data: fallback,
+            fallbackUsed: true
         });
     }
 };
@@ -294,8 +311,9 @@ export const recordAndAnalyze = async (req, res) => {
         });
         formData.append('targetWord', req.body.targetWord);
 
-        console.log("[FORWARD] Node -> Flask request started to:", `${PHONEME_API_URL}/record`);
-        const response = await axios.post(`${PHONEME_API_URL}/record`, formData, {
+        const targetUrl = `${getPhonemeUrl()}/record`;
+        console.log("[FORWARD] Node -> Flask request started to:", targetUrl);
+        const response = await axios.post(targetUrl, formData, {
             headers: {
                 ...formData.getHeaders(),
             },
@@ -323,7 +341,8 @@ export const recordAndAnalyze = async (req, res) => {
 // @access  Public
 export const ttsProxy = async (req, res) => {
     try {
-        const response = await axios.post(`${PHONEME_API_URL}/tts`, req.body, {
+        const targetUrl = `${getPhonemeUrl()}/tts`;
+        const response = await axios.post(targetUrl, req.body, {
             headers: { 'Content-Type': 'application/json' },
             responseType: 'arraybuffer'
         });
