@@ -50,6 +50,11 @@ export default function Chatbot() {
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   useEffect(scrollToBottom, [messages, isLoading]);
 
+  // Ping the backend on mount to wake Render free-tier from cold start
+  useEffect(() => {
+    fetch(`${API_URL}/health`).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) return;
     const token = localStorage.getItem('token');
@@ -87,7 +92,7 @@ export default function Chatbot() {
       });
 
       const data = await res.json();
-      const reply = data.success ? data.content : "I'm having trouble connecting right now. Please try again in a moment!";
+      const reply = data.success ? data.content : "The AI service is warming up — please try again in 30 seconds!";
 
       setMessages(prev => [
         ...prev,
@@ -105,9 +110,10 @@ export default function Chatbot() {
 
   return (
     <div
-      className="flex flex-col pt-16"
+      className="flex flex-col"
       style={{
-        minHeight: '100vh',
+        height: '100vh',
+        paddingTop: '64px',
         background: darkMode
           ? 'linear-gradient(135deg, #050714 0%, #070b1a 60%, #050714 100%)'
           : 'linear-gradient(135deg, #f4efe8 0%, #ede7dd 60%, #f4efe8 100%)',
@@ -126,7 +132,7 @@ export default function Chatbot() {
 
       {/* Header */}
       <div
-        className="sticky top-0 z-30 border-b backdrop-blur-xl px-6 py-4"
+        className="shrink-0 border-b backdrop-blur-xl px-6 py-4"
         style={{
           borderColor: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(99,102,241,0.15)',
           background: darkMode ? 'rgba(5, 7, 20, 0.85)' : 'rgba(244,239,232,0.94)',
@@ -217,7 +223,7 @@ export default function Chatbot() {
 
       {/* Input area */}
       <div
-        className="border-t px-4 pb-6 pt-4 backdrop-blur-xl"
+        className="shrink-0 border-t px-4 pb-6 pt-4 backdrop-blur-xl"
         style={{
           borderColor: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(99,102,241,0.15)',
           background: darkMode ? 'rgba(5, 7, 20, 0.7)' : 'rgba(244,239,232,0.90)',
