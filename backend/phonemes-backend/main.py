@@ -16,8 +16,10 @@ app = Flask(__name__)
 
 # Configure CORS
 _allowed_origins = [
-    r"http://localhost:\d+",
-    r"http://127.0.0.1:\d+",
+    r"https?://localhost:\d+",
+    r"https?://127\.0\.0\.1:\d+",
+    r"https://.*\.vercel\.app",
+    r"https://.*\.onrender\.com",
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
@@ -25,7 +27,13 @@ _allowed_origins = [
 ]
 _frontend_url = os.getenv("FRONTEND_URL")
 if _frontend_url:
-    _allowed_origins.append(_frontend_url)
+    if _frontend_url == "*":
+        _allowed_origins = "*"
+    else:
+        for url in _frontend_url.split(","):
+            u = url.strip()
+            if u:
+                _allowed_origins.append(u)
 
 CORS(app,
      origins=_allowed_origins,

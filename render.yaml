@@ -1,0 +1,67 @@
+services:
+  # 1. Express Node.js Backend Server
+  - type: web
+    name: neuroai-backend
+    env: node
+    rootDir: backend/server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        sync: false
+      - key: PHONEME_API_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+
+  # 2. Python Phonemes Detection Service
+  - type: web
+    name: neuroai-phonemes
+    env: python
+    rootDir: backend/phonemes-backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPEN_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+
+  # 3. Python Streamlit Chatbot Service
+  - type: web
+    name: neuroai-chatbot
+    env: python
+    rootDir: backend/streamlit-chatbot
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+
+  # 4. React Frontend (Static Site on Render - Optional)
+  - type: web
+    name: neuroai-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_PHONEME_URL
+        sync: false
