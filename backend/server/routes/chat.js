@@ -22,6 +22,34 @@ Speech tips:
 
 Always be warm, encouraging, and specific. Never frame feedback negatively. Keep responses under 200 words unless more detail is explicitly requested.`;
 
+// GET /api/chat/health — diagnostic: tests Groq connectivity and returns the exact error
+router.get('/health', async (req, res) => {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ ok: false, reason: 'GROQ_API_KEY env var is not set on this server' });
+  }
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama3-8b-8192',
+        messages: [{ role: 'user', content: 'Say "ok" in one word.' }],
+        max_tokens: 5,
+      },
+      {
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        timeout: 15000,
+      }
+    );
+    const content = response.data.choices[0]?.message?.content || '';
+    return res.json({ ok: true, groqResponse: content, keyPrefix: apiKey.slice(0, 8) + '...' });
+  } catch (err) {
+    const detail = err.response?.data?.error || err.message;
+    const status = err.response?.status;
+    return res.status(200).json({ ok: false, httpStatus: status, error: detail, keyPrefix: apiKey.slice(0, 8) + '...' });
+  }
+});
+
 // POST /api/chat
 router.post('/', async (req, res) => {
   const { messages, userContext } = req.body;
