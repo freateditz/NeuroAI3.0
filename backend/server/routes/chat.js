@@ -40,7 +40,13 @@ router.post('/', async (req, res) => {
     systemPrompt += `\n\nStudent progress context:\n- Tests completed: ${userContext.completedTests || 0}/${userContext.totalTests || 0}\n- Average accuracy: ${userContext.averageAccuracy || 0}%\n- Best phoneme: ${userContext.bestLetter || 'unknown'}\n- Needs most help with: ${userContext.worstLetter || 'unknown'}\nPersonalize your advice to this student's specific progress.`;
   }
 
-  const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it'];
+  const models = [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-70b-versatile',
+    'llama-3.1-8b-instant',
+    'llama3-8b-8192',
+    'gemma2-9b-it',
+  ];
   let lastError = null;
 
   for (const model of models) {
@@ -58,7 +64,7 @@ router.post('/', async (req, res) => {
             Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
           },
-          timeout: 15000,
+          timeout: 25000,
         }
       );
 
@@ -69,10 +75,12 @@ router.post('/', async (req, res) => {
       return res.json({ success: true, content, model });
     } catch (err) {
       lastError = err.response?.data?.error?.message || err.message;
+      console.error(`[CHAT] Model ${model} failed:`, lastError);
       continue;
     }
   }
 
+  console.error('[CHAT] All models failed. Last error:', lastError);
   res.status(503).json({ success: false, message: `AI service unavailable: ${lastError}` });
 });
 

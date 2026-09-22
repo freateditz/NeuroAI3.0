@@ -1,24 +1,17 @@
 import axios from 'axios';
 import * as FileSystem from 'expo-file-system';
 
-// Returns a local file URI ready for expo-audio player.replace({ uri })
-
-
-// Your Mac's LAN IP — shown in `npx expo start` QR output (exp://X.X.X.X:8081)
-// Change this if your IP changes (router reassignment, new network, etc.)
-export const LOCAL_IP = '192.168.0.231';
-
-export const NODE_URL = `http://${LOCAL_IP}:8000`;
-export const FLASK_URL = `http://${LOCAL_IP}:5002`;
+export const NODE_URL = 'https://neuroai3-0-backend.onrender.com';
+export const PHONEMES_URL = 'https://neuroai3-0-phonemes.onrender.com';
 
 export const nodeApi = axios.create({
   baseURL: NODE_URL,
-  timeout: 15000,
+  timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-export const flaskApi = axios.create({
-  baseURL: FLASK_URL,
+export const phonemesApi = axios.create({
+  baseURL: PHONEMES_URL,
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -61,36 +54,45 @@ export const COURSES = [
   { id: 6, phoneme1: 'L', phoneme2: 'R', title: 'L vs R', color: '#fde68a' },
 ];
 
-export const analyzeAudio = async (audioUri, expectedWord, phoneme1, phoneme2) => {
+// Analyzes audio — phonemes backend /record endpoint.
+// Returns normalised shape: { percentage, transcription, isCorrect, feedback }
+export const analyzeAudio = async (audioUri, expectedWord) => {
   const formData = new FormData();
   formData.append('audio', {
     uri: audioUri,
     type: 'audio/m4a',
     name: 'recording.m4a',
   });
-  formData.append('expected_word', expectedWord);
-  if (phoneme1) formData.append('phoneme1', phoneme1);
-  if (phoneme2) formData.append('phoneme2', phoneme2);
+  formData.append('targetWord', expectedWord);
 
-  const response = await axios.post(`${FLASK_URL}/analyze-phoneme`, formData, {
+  const response = await axios.post(`${PHONEMES_URL}/record`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 30000,
   });
-  return response.data;
+
+  const d = response.data;
+  return {
+    percentage: d.accuracy ?? 0,
+    transcription: d.transcript ?? '',
+    isCorrect: d.isCorrect ?? false,
+    feedback: d.note ?? null,
+  };
 };
 
-export const getRemedy = async (percentage, p1, p2) => {
-  const response = await flaskApi.post('/get-remedy', {
-    percentage,
-    phoneme1: p1,
-    phoneme2: p2,
-  });
-  return response.data;
+// Fetches AI remedy tips for a phoneme letter at a given accuracy percentage.
+export const getRemedy = async (percentage, p1) => {
+  const letter = p1 || 'S';
+  const pct = Math.round(percentage);
+  const response = await phonemesApi.get(`/remedy/${letter}/${pct}`);
+  const d = response.data;
+  const remedyText = Array.isArray(d.remedy) ? d.remedy.join(' ') : (d.remedy || 'Keep practicing every day!');
+  return { remedy: remedyText };
 };
 
+// Returns a local file URI for playback via expo-audio.
 export const playTTS = async (text) => {
   const response = await axios.post(
-    `${FLASK_URL}/tts`,
+    `${PHONEMES_URL}/tts`,
     { text },
     { responseType: 'arraybuffer', timeout: 20000 }
   );
@@ -135,11 +137,16 @@ export const fetchArticles = async (token) => {
   return response.data;
 };
 
+// Chat goes through Node backend /api/chat (Groq-powered).
+// Returns { reply } for use in ChatbotScreen.
 export const sendChatMessage = async (messages) => {
-  const response = await flaskApi.post('/chat', { messages });
-  return response.data;
+  const response = await nodeApi.post('/api/chat', { messages });
+  const d = response.data;
+  return { reply: d.content || d.reply || d.message || 'I understand. Keep practicing!' };
 };
 
+// Transcribes voice by sending to /record with a placeholder targetWord.
+// Only the transcript field is used; accuracy is discarded.
 export const transcribeAudio = async (audioUri) => {
   const formData = new FormData();
   formData.append('audio', {
@@ -147,9 +154,11 @@ export const transcribeAudio = async (audioUri) => {
     type: 'audio/m4a',
     name: 'voice.m4a',
   });
-  const response = await axios.post(`${FLASK_URL}/transcribe`, formData, {
+  formData.append('targetWord', 'hello');
+
+  const response = await axios.post(`${PHONEMES_URL}/record`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 20000,
   });
-  return response.data;
+  return { transcription: response.data.transcript || '' };
 };

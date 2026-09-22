@@ -34,7 +34,7 @@ export default function LoginScreen({ navigation }) {
       const serverMsg = e?.response?.data?.detail || e?.response?.data?.message;
       const isNetworkError = !e?.response;
       if (isNetworkError) {
-        setError('Cannot reach server. Make sure your backend is running and LOCAL_IP in api.js matches your Mac\'s IP.');
+        setError('Cannot reach server. Please check your internet connection and try again.');
       } else {
         setError(serverMsg || e?.message || 'Login failed. Please try again.');
       }
